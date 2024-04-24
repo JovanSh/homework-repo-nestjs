@@ -6,41 +6,51 @@ import {
   Param,
   Patch,
   Post,
-  Res,
+  Query,
 } from '@nestjs/common';
 import { CarsService } from './cars.service';
 import { CreateCarDto } from './dtos/create-car.dto';
 import { UpdateCarDto } from './dtos/update-car.dto';
-import { Response } from 'express';
+import { CarFilters } from './interfaces/cars-filters.interface';
 
 @Controller('cars')
 export class CarsController {
   constructor(private carsService: CarsService) {}
 
   @Get()
-  getAllCars() {
-    return this.carsService.getAllCars();
+  getAllCars(
+    @Query('id') id: number,
+    @Query('make') make: string,
+    @Query('model') model: string,
+    @Query('year') year: number,
+  ) {
+    const filters: CarFilters = {
+      id,
+      make,
+      model,
+      year,
+    };
+
+    return this.carsService.getAllCars(filters);
   }
 
   @Get(':id')
-  getCarById(@Param('id') carId: string) {
-    return this.carsService.getCarById(carId);
+  getCarById(@Param('id') id: string) {
+    return this.carsService.getCarById(Number(id));
   }
 
   @Post()
-  createCar(@Body() body: CreateCarDto) {
-    return this.carsService.createCar(body);
+  createCar(@Body() carData: CreateCarDto) {
+    return this.carsService.createCar(carData);
   }
 
   @Patch(':id')
   updateCar(@Param('id') carId: string, @Body() updateData: UpdateCarDto) {
-    return this.carsService.updateCar(carId, updateData);
+    return this.carsService.updateCar(Number(carId), updateData);
   }
 
   @Delete(':id')
-  async deleteCar(@Res() res: Response, @Param('id') carId: string) {
-    await this.carsService.deleteCar(carId);
-
-    res.sendStatus(204);
+  deleteCar(@Param('id') carId: string) {
+    return this.carsService.deleteCar(Number(carId));
   }
 }

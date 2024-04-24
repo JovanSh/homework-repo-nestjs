@@ -1,23 +1,31 @@
-import { IsString, Length, IsNumber, Min, IsOptional } from 'class-validator';
+import {
+  IsNumber,
+  IsOptional,
+  IsString,
+  Length,
+  Max,
+  Min,
+} from 'class-validator';
+import { CreateCarDto } from './create-car.dto';
+import { PartialType } from '@nestjs/mapped-types';
 
-export class UpdateCarDto {
-  @IsNumber()
-  @Min(0)
-  @IsOptional()
-  id: number;
+// export class UpdateCarDto {
+//   @IsOptional()
+//   @IsString()
+//   @Length(3, 30)
+//   title: string;
 
-  @IsString()
-  @Length(3, 30)
-  @IsOptional()
-  make: string;
+//   @IsOptional()
+//   @IsNumber()
+//   @Min(0)
+//   stock: number;
 
-  @IsString()
-  @Length(3, 30)
-  @IsOptional()
-  model: string;
+//   @IsOptional()
+//   @IsNumber()
+//   @Min(0)
+//   @Max(10000)
+//   price: number;
+// }
 
-  @IsNumber()
-  @Min(0)
-  @IsOptional()
-  year: number;
-}
+//To use PartialType install `npm i --save @nestjs/mapped-types` so that you can import it
+export class UpdateCarDto extends PartialType(CreateCarDto) {}

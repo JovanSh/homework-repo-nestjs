@@ -1,83 +1,68 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { writeFile, readFile } from 'node:fs/promises';
-import { join } from 'node:path';
-import { Car } from './interfaces/car.interface';
+import { Injectable, NotFoundException, Param } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Car } from './entities/car.entity';
+import { FindManyOptions, MoreThan, Repository } from 'typeorm';
 import { CreateCarDto } from './dtos/create-car.dto';
-import { v4 as uuid } from 'uuid';
+import { NotFoundError } from 'rxjs';
 import { UpdateCarDto } from './dtos/update-car.dto';
+import { CarFilters } from './interfaces/cars-filters.interface';
 
 @Injectable()
 export class CarsService {
-  async getAllCars() {
-    const carsJSON = await readFile(
-      join(process.cwd(), 'src', 'cars', 'data', 'cars.json'),
-      'utf-8',
-    );
+  constructor(@InjectRepository(Car) private carsRepo: Repository<Car>) {}
 
-    const cars: Car[] = JSON.parse(carsJSON);
+  getAllCars(filters: CarFilters) {
+    const filterConfig: FindManyOptions<Car> = {};
 
-    return cars;
+    console.log(filters);
+
+    if (filters.id) {
+      filterConfig.where = { id: filters.id };
+    }
+
+    if (filters.make) {
+      filterConfig.where = { make: filters.make };
+    }
+
+    if (filters.model) {
+      filterConfig.where = { model: filters.model };
+    }
+
+    if (filters.year) {
+      filterConfig.where = { year: filters.year };
+    }
+
+    console.log(filterConfig);
+
+    return this.carsRepo.find(filterConfig);
   }
 
-  async saveCars(cars: Car[]) {
-    await writeFile(
-      join(process.cwd(), 'src', 'cars', 'data', 'cars.json'),
-      JSON.stringify(cars, null, 2),
-      'utf-8',
-    );
-  }
-
-  async getCarById(carId: string) {
-    const cars = await this.getAllCars();
-
-    const foundCar = cars.find((car) => car.id === carId);
+  async getCarById(id: number) {
+    const foundCar = await this.carsRepo.findOneBy({ id });
 
     if (!foundCar) throw new NotFoundException('Car not found');
 
     return foundCar;
   }
 
-  async createCar(carData: CreateCarDto) {
-    const cars = await this.getAllCars();
-
-    const newCar: Car = {
-      id: uuid(),
-      ...carData,
-    };
-
-    cars.push(newCar);
-
-    await this.saveCars(cars);
-
-    return newCar;
+  createCar(carData: CreateCarDto) {
+    return this.carsRepo.save(carData);
   }
 
-  async updateCar(carId: string, updateData: UpdateCarDto) {
-    const cars = await this.getAllCars();
+  async updateCar(carId: number, updateData: UpdateCarDto) {
+    const foundCar = await this.getCarById(carId);
 
-    const carExists = cars.some((car) => car.id === carId);
+    Object.assign(foundCar, updateData);
 
-    if (!carExists) throw new NotFoundException('Car not found');
+    // const updatedCar = {...foundCar, updateData}
 
-    const updatedCars = cars.map((car) => {
-      if (car.id === carId) {
-        return { ...car, ...updateData };
-      } else {
-        return car;
-      }
-    });
-
-    await this.saveCars(updatedCars);
+    //This will update the car instead of creating a new one becasue we sent a full entity object with id
+    await this.carsRepo.save(foundCar);
   }
 
-  async deleteCar(carId: string) {
-    const cars = await this.getAllCars();
+  async deleteCar(carId: number) {
+    const foundCar = await this.getCarById(carId);
 
-    const updatedCars = cars.filter((car) => car.id !== carId);
-
-    if (cars.length === updatedCars.length)
-      throw new NotFoundException('Car not found');
-
-    await this.saveCars(updatedCars);
+    await this.carsRepo.remove(foundCar);
   }
 }
