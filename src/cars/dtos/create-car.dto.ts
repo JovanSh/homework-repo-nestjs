@@ -8,16 +8,21 @@ import {
 } from 'class-validator';
 
 export class CreateCarDto {
+  @IsNumber()
+  @Min(0)
+  @Max(10000)
+  id: number;
+
   @IsString()
   @Length(3, 30)
-  title: string;
+  make: string;
 
   @IsNumber()
   @Min(0)
-  stock: number;
+  model: string;
 
   @IsNumber()
   @Min(0)
   @Max(10000)
-  price: number;
+  year: number;
 }
